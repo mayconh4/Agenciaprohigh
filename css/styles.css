@@ -497,3 +497,10 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .script-card{padding:13px;border-radius:12px;background:var(--glass);border:1px solid var(--stroke);margin-bottom:10px}
 .sc-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
 .script-card p{font-size:12.5px;line-height:1.55;color:var(--txt-2);white-space:pre-wrap}
+
+/* Botão "Ouvir" (leitura em voz / TTS) */
+.tts svg{width:15px;height:15px}
+.tts.playing{background:var(--grad-cyan);color:#0a1530;border-color:transparent;animation:ttsPulse 1.4s ease-in-out infinite}
+@keyframes ttsPulse{0%,100%{box-shadow:0 0 0 0 rgba(103,232,249,.5)}50%{box-shadow:0 0 0 7px rgba(103,232,249,0)}}
+.concept-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.gloss-ouvir{margin-top:11px}

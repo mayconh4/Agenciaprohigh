@@ -3,6 +3,11 @@
 (function () {
   let TAB = null; // 'pratico' | 'basico' | 'gloss'
 
+  // Botão "Ouvir" (leitura em voz) reutilizável
+  function ouvir(kind, id) {
+    return '<button class="btn btn-ghost btn-sm tts" data-action="speak" data-kind="' + kind + '" data-id="' + NEXUS.ui.esc(id) + '" data-tip="Ouvir esta explicação em voz" aria-label="Ouvir explicação"><svg><use href="#i-sound"/></svg><span class="tts-lbl">Ouvir</span></button>';
+  }
+
   function tabs(active) {
     const items = [
       { id: 'pratico', label: 'Modo Prático', ico: 'i-target' },
@@ -58,6 +63,7 @@
             ${locked ? `<button class="btn btn-ghost btn-sm" disabled>${ui.icon('i-arrow')} ${ui.esc(e.cta || 'Abrir')}</button>`
               : `<button class="btn ${current ? 'btn-primary' : 'btn-ghost'} btn-sm" data-go="${e.module}" data-action="go">${ui.icon('i-arrow')} ${ui.esc(e.cta || 'Abrir módulo')}</button>`}
             <button class="btn btn-sm ${isDone ? 'btn-ghost' : 'btn-cyan'}" data-action="toggleStep" data-id="${e.id}">${isDone ? 'Concluída ✓' : ui.icon('i-check') + ' Marcar como feita'}</button>
+            ${ouvir('step', e.id)}
           </div>
         </div>
       </div>`;
@@ -110,7 +116,10 @@
         ${m.como ? `<div class="concept-row"><span class="cr-tag">Como aplicar</span><p>${ui.esc(m.como)}</p></div>` : ''}
         ${m.exemplo ? `<div class="concept-ex">${ui.icon('i-spark')} <span><b>Exemplo real:</b> ${ui.esc(m.exemplo)}</span></div>` : ''}
         ${extra}
-        <button class="btn btn-sm ${isRead ? 'btn-ghost' : 'btn-primary'}" style="margin-top:12px" data-action="markConcept" data-id="${m.id}">${isRead ? 'Marcar como não lido' : ui.icon('i-check') + ' Entendi'}</button>
+        <div class="concept-actions">
+          ${ouvir('concept', m.id)}
+          <button class="btn btn-sm ${isRead ? 'btn-ghost' : 'btn-primary'}" data-action="markConcept" data-id="${m.id}">${isRead ? 'Marcar como não lido' : ui.icon('i-check') + ' Entendi'}</button>
+        </div>
       </div>`;
     }).join('');
 
@@ -134,6 +143,7 @@
         ${m.leitura ? `<div><b>Número bom/ruim:</b> ${ui.esc(m.leitura)}</div>` : ''}
         ${m.melhorar ? `<div><b>Como melhorar:</b> ${ui.esc(m.melhorar)}</div>` : ''}
       </div>
+      <div class="gloss-ouvir">${ouvir('gloss', m.sigla)}</div>
     </div>`).join('');
     return `<div class="card" style="margin-bottom:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
         <div style="flex:1;min-width:220px"><h3 style="font-family:'Outfit';font-size:16px">Glossário de marketing e vendas</h3><p class="muted" style="font-size:13px;margin-top:4px">Toda sigla explicada do jeito simples, com exemplo. ${g.length} termos.</p></div>
@@ -145,6 +155,7 @@
   NEXUS.registerModule({
     id: 'academy', label: 'Aprender', icon: 'i-doc', phase: '',
     render(ctx) {
+      if (NEXUS.stopSpeak) NEXUS.stopSpeak();
       const tab = TAB || (ctx.state.learn.mode === 'basico' ? 'basico' : 'pratico');
       TAB = tab;
       let body = '';
@@ -183,6 +194,22 @@
         const txt = arr[i] ? (arr[i].mensagem || arr[i].conteudo || '') : '';
         if (navigator.clipboard) navigator.clipboard.writeText(txt);
         ctx.ui.toast('Mensagem copiada');
+      },
+      speak(ctx, el) {
+        const kind = el.dataset.kind, id = el.dataset.id;
+        const join = (arr) => arr.filter(Boolean).join(' ');
+        let text = '';
+        if (kind === 'concept') {
+          const m = (ctx.academy.basico.modulos || []).find((x) => x.id === id);
+          if (m) text = join([m.titulo + '.', 'O que é:', m.oque, 'Por que importa:', m.porque, m.erro ? ('Erro comum: ' + m.erro) : '', m.como ? ('Como aplicar: ' + m.como) : '', m.exemplo ? ('Exemplo: ' + m.exemplo) : '']);
+        } else if (kind === 'gloss') {
+          const g = (ctx.academy.basico.glossario || []).find((x) => x.sigla === id);
+          if (g) text = join([g.sigla + '.', (g.nome || '') + '.', g.oque, g.exemplo ? ('Exemplo: ' + g.exemplo) : '', g.calculo ? ('Como calcular: ' + g.calculo) : '', g.melhorar ? ('Como melhorar: ' + g.melhorar) : '']);
+        } else if (kind === 'step') {
+          const s = (ctx.academy.pratico.etapas || []).find((x) => x.id === id);
+          if (s) text = join([s.titulo + '.', s.oque, 'Por que:', s.porque, 'Resultado esperado:', s.resultado, s.dica ? ('Dica: ' + s.dica) : '']);
+        }
+        NEXUS.speak(text, el);
       },
       askAssistant() { NEXUS.copilot.toggle(); },
     },

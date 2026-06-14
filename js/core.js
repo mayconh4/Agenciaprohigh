@@ -347,6 +347,36 @@
     toastT = setTimeout(() => t.classList.remove('show'), 2600);
   }
 
+  // ---- Leitura em voz (Web Speech API, pt-BR) ----
+  let _ttsBtn = null;
+  function _ttsReset(btn) {
+    if (!btn) return;
+    btn.classList.remove('playing');
+    const lbl = btn.querySelector('.tts-lbl'); if (lbl) lbl.textContent = 'Ouvir';
+    const u = btn.querySelector('use'); if (u) u.setAttribute('href', '#i-sound');
+  }
+  function stopSpeak() {
+    try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (_) {}
+    _ttsReset(_ttsBtn); _ttsBtn = null;
+  }
+  function speak(text, btn) {
+    if (!('speechSynthesis' in window)) { toast('Seu navegador não suporta leitura em voz', 'i-x'); return; }
+    const synth = window.speechSynthesis;
+    const wasThis = (_ttsBtn === btn) && synth.speaking;
+    stopSpeak();
+    if (wasThis || !text) return; // clicar de novo no mesmo = parar
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'pt-BR'; u.rate = 1; u.pitch = 1;
+    const voices = synth.getVoices() || [];
+    const v = voices.find((x) => /pt[-_]?BR/i.test(x.lang)) || voices.find((x) => /^pt/i.test(x.lang));
+    if (v) u.voice = v;
+    _ttsBtn = btn;
+    if (btn) { btn.classList.add('playing'); const lbl = btn.querySelector('.tts-lbl'); if (lbl) lbl.textContent = 'Parar'; const us = btn.querySelector('use'); if (us) us.setAttribute('href', '#i-stop'); }
+    u.onend = () => { if (_ttsBtn === btn) { _ttsReset(btn); _ttsBtn = null; } };
+    u.onerror = () => { _ttsReset(btn); };
+    synth.speak(u);
+  }
+
   const md = (t) => esc(t)
     .replace(/^#{1,6}\s+(.+)$/gm, '<strong>$1</strong>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
@@ -424,6 +454,7 @@
 
   function setActive(id) {
     if (!modules[id]) return;
+    stopSpeak();
     activeId = id;
     document.getElementById('sidebar').classList.remove('open');
     buildNav();
@@ -577,7 +608,7 @@
   // ----------------------------------------------------------------
   window.NEXUS = {
     boot, registerModule, store, ui, computeKpis, currentNiche,
-    content: CONTENT, niches: NICHES, prompts: PROMPTS, academy: ACADEMY, gloss,
+    content: CONTENT, niches: NICHES, prompts: PROMPTS, academy: ACADEMY, gloss, speak, stopSpeak,
     get ctx() { return ctx(); },
     setActive,
     ai: { live: false, generate: async () => '', init() {} }, // substituído por ai.js
