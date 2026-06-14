@@ -3,21 +3,30 @@
   NEXUS.registerModule({
     id: 'dashboard', label: 'Painel', icon: 'i-grid', phase: 'F12',
     render(ctx) {
-      const { kpis: k, ui, state } = ctx;
+      const { kpis: k, ui, state, nextAction: na, firstClient: fc, academy } = ctx;
       const hist = k.history;
       const mrrSeries = hist.map((h) => h.mrrBRL);
       const g = state.goals.today, t = state.goals.targets;
+      const tip = (sigla, fb) => { const e = ui.gloss(sigla); return e ? e.oque : fb; };
 
       const tiles = [
-        ui.kpiTile({ label: 'MRR', ico: 'i-money', val: ui.brlK(k.mrr), trend: k.trends.mrr, positive: true }),
-        ui.kpiTile({ label: 'Ticket médio', ico: 'i-chart', val: ui.brlK(k.ticket), trend: k.trends.ticket, positive: true }),
-        ui.kpiTile({ label: 'CAC', ico: 'i-target', val: ui.brlK(k.cac), trend: k.trends.cac, positive: false }),
-        ui.kpiTile({ label: 'LTV : CAC', ico: 'i-bolt', val: k.ltvCac.toFixed(1) + 'x', trend: k.trends.ltv, positive: true }),
-        ui.kpiTile({ label: 'Churn', ico: 'i-heart', val: ui.pct(k.churnPct), trend: k.trends.churn, positive: false }),
-        ui.kpiTile({ label: 'Taxa de fechamento', ico: 'i-funnel', val: ui.pct(k.closeRatePct, 0), trend: k.trends.close, positive: true }),
-        ui.kpiTile({ label: 'ROI', ico: 'i-up', val: k.roi.toFixed(1) + 'x', trend: k.trends.roi, positive: true }),
-        ui.kpiTile({ label: 'Tempo de entrega', ico: 'i-clock', val: k.deliveryDays + 'd', trend: k.trends.delivery, positive: false }),
+        ui.kpiTile({ label: 'MRR', ico: 'i-money', val: ui.brlK(k.mrr), trend: k.trends.mrr, positive: true, tip: tip('MRR', 'Receita recorrente mensal — o que entra todo mês com seus clientes.') }),
+        ui.kpiTile({ label: 'Ticket médio', ico: 'i-chart', val: ui.brlK(k.ticket), trend: k.trends.ticket, positive: true, tip: tip('AOV', 'Valor médio que cada cliente paga por mês.') }),
+        ui.kpiTile({ label: 'CAC', ico: 'i-target', val: ui.brlK(k.cac), trend: k.trends.cac, positive: false, tip: tip('CAC', 'Custo para conquistar um cliente novo. Quanto menor, melhor.') }),
+        ui.kpiTile({ label: 'LTV : CAC', ico: 'i-bolt', val: k.ltvCac.toFixed(1) + 'x', trend: k.trends.ltv, positive: true, tip: 'Quantas vezes o valor total do cliente (LTV) paga o custo de adquiri-lo (CAC). Acima de 3x é saudável.' }),
+        ui.kpiTile({ label: 'Churn', ico: 'i-heart', val: ui.pct(k.churnPct), trend: k.trends.churn, positive: false, tip: tip('Churn', 'Percentual de clientes que cancelam. Quanto menor, melhor.') }),
+        ui.kpiTile({ label: 'Taxa de fechamento', ico: 'i-funnel', val: ui.pct(k.closeRatePct, 0), trend: k.trends.close, positive: true, tip: tip('Closing Rate', 'De cada 10 negociações, quantas viram cliente.') }),
+        ui.kpiTile({ label: 'ROI', ico: 'i-up', val: k.roi.toFixed(1) + 'x', trend: k.trends.roi, positive: true, tip: tip('ROI', 'Quanto dinheiro voltou em relação ao que foi investido.') }),
+        ui.kpiTile({ label: 'Tempo de entrega', ico: 'i-clock', val: k.deliveryDays + 'd', trend: k.trends.delivery, positive: false, tip: 'Dias para colocar a operação do cliente no ar. Quanto mais rápido, melhor.' }),
       ].join('');
+
+      const nudge = (fc.abordagensHoje === 0 && (academy.assist.nudges || []).length)
+        ? `<div class="nudge">${ui.icon('i-fire')}<div><b>${ui.esc(academy.assist.nudges[0])}</b></div><button class="btn btn-sm btn-primary" data-go="prospecting" data-action="go">Prospectar agora</button></div>` : '';
+      const nextStep = `<div class="card nextstep" style="margin-bottom:14px">
+        <div class="ns-ic">${ui.icon('i-bolt')}</div>
+        <div style="flex:1"><div class="tl-phase">SEU PRÓXIMO PASSO</div><h3 style="font-family:'Outfit';font-size:16px;margin:2px 0 4px">${ui.esc(na.title)}</h3><div class="muted" style="font-size:12.5px">${ui.esc(na.why)}</div></div>
+        <button class="btn btn-primary" data-go="${na.module}" data-action="go">${ui.esc(na.cta)} ${ui.icon('i-arrow')}</button>
+      </div>`;
 
       const funnelSteps = [
         { key: 'abordagens', label: 'Abordagens' },
@@ -42,6 +51,8 @@
       if (hot.length) alerts.push(`<div class="alert good"><div class="a-ic">${ui.icon('i-money')}</div><div class="a-tx"><b>${hot.length} negócio(s) em fechamento</b><small>${ui.brl(hot.reduce((a, d) => a + d.valueBRL, 0))}/mês prestes a entrar</small></div><button class="btn btn-sm btn-ghost" data-go="pipeline" data-action="go">Funil</button></div>`);
 
       return `
+      ${nudge}
+      ${nextStep}
       <div class="grid cols-4" style="margin-bottom:14px">${tiles}</div>
 
       <div class="grid cols-3" style="grid-template-columns:2fr 1fr;margin-bottom:14px">
@@ -70,7 +81,7 @@
         </div>
         <div class="card">
           <div class="card-head"><div class="card-ico">${ui.icon('i-spark')}</div><div><h3>Análise da operação</h3><div class="sub">Recomendações por IA</div></div>
-            <div class="right"><button class="btn btn-primary btn-sm" data-action="aiInsight">${ui.icon('i-spark')} Gerar</button></div>
+            <div class="right"><button class="btn btn-primary btn-sm" data-action="aiInsight" data-tip="A IA lê seus números e sugere as 3 ações que mais aumentam seu faturamento agora.">${ui.icon('i-spark')} Gerar</button></div>
           </div>
           <div id="kpiAiOut" class="ai-out" style="display:none"></div>
           <div id="kpiAiHint" class="muted" style="font-size:12.5px;line-height:1.6">A IA lê seus KPIs (CAC, LTV, churn, ROI) e devolve 3 alavancas priorizadas. ${ctx.ai.live ? '' : '<br><span style="color:var(--amber)">Modo demo ativo — defina ANTHROPIC_API_KEY para IA real.</span>'}</div>

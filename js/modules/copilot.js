@@ -5,11 +5,11 @@
   let busy = false;
 
   const CHIPS = [
+    'Como consigo meu primeiro cliente?',
+    'O que é CPA?',
+    'O que é um lead?',
     'Onde estou perdendo dinheiro?',
-    'Como reduzir meu churn?',
-    'Devo subir o ticket?',
-    'Qual minha próxima fase?',
-    'Como prospectar melhor?',
+    'Como abordo uma clínica?',
   ];
 
   function bodyEl() { return document.getElementById('copilotBody'); }
@@ -35,7 +35,7 @@
 
   function paint() {
     const el = bodyEl();
-    const welcome = `<div class="msg bot">Eu sou o <strong>Copiloto NEXUS</strong>. Conheço o playbook das 12 fases e os números da sua operação. Me pergunte onde focar — ou escolha:</div>${renderChips()}`;
+    const welcome = `<div class="msg bot">Oi! Eu sou o <strong>Copiloto NEXUS</strong>. Eu te ajudo a conseguir clientes e <strong>explico qualquer termo em linguagem simples</strong> (ex.: "o que é CPA?"). Pergunte o que quiser — ou toque numa opção:</div>${renderChips()}`;
     const msgs = history.map((m) => `<div class="msg ${m.role === 'user' ? 'me' : 'bot'}">${m.role === 'user' ? ui.esc(m.content) : ui.md(m.content)}</div>`).join('');
     el.innerHTML = welcome + msgs + (busy ? `<div class="msg bot typing"><i></i><i></i><i></i></div>` : '');
     el.scrollTop = el.scrollHeight;

@@ -81,7 +81,7 @@
           </div>
           <div>
             <div id="offerAiOut" class="ai-out" style="display:none;margin-bottom:12px"></div>
-            <button class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:8px" data-action="genOffer">${ui.icon('i-spark')} Gerar oferta com IA</button>
+            <button class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:8px" data-action="genOffer" data-tip="A IA monta uma oferta pronta para vender: o que entregar, por quanto e como posicionar.">${ui.icon('i-spark')} Gerar oferta com IA</button>
             <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-bottom:8px" data-action="applySuggested">Usar sugestão do nicho</button>
             <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center" data-action="editOffer">Editar oferta</button>
           </div>

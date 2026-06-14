@@ -48,8 +48,8 @@
       </div>
       <div class="card">
         <div class="card-head"><div class="card-ico">${ui.icon('i-funnel')}</div><div><h3>Pipeline</h3><div class="sub">Arraste os cards entre os estágios</div></div>
-          <div class="right"><button class="btn btn-primary btn-sm" data-action="addDeal">${ui.icon('i-plus')} Novo negócio</button></div></div>
-        <div class="kanban" id="kanban">${cols}</div>
+          <div class="right"><button class="btn btn-primary btn-sm" data-action="addDeal" data-tip="Adicione uma negociação em andamento ao funil.">${ui.icon('i-plus')} Novo negócio</button></div></div>
+        <div class="kanban" id="kanban" data-tip="Arraste o card para a direita conforme a negociação avança: do primeiro contato (ADS) até Ganho.">${cols}</div>
       </div>`;
     },
     mount(root, ctx) {

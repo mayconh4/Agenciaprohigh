@@ -18,12 +18,15 @@
     return tpl ? fill(tpl, vars || {}) : 'Conteúdo gerado (modo demo).';
   }
 
+  const noAccent = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   function copilotoDemo(q) {
-    const text = String(q || '').toLowerCase();
-    const rules = D.copiloto || [];
-    for (const r of rules) {
-      if ((r.match || []).some((m) => text.includes(m))) return r.answer;
-    }
+    const text = noAccent(q);
+    const hit = (rules) => { for (const r of (rules || [])) { if ((r.match || []).some((m) => text.includes(noAccent(m)))) return r.answer; } return null; };
+    // 1) Dúvidas de iniciante / glossário (Central de Aprendizado)
+    const gloss = (NEXUS.academy && NEXUS.academy.assist && NEXUS.academy.assist.glossAnswers) || [];
+    const g = hit(gloss); if (g) return g;
+    // 2) Regras estratégicas do playbook
+    const r = hit(D.copiloto); if (r) return r;
     return D.copilotoDefault || 'Pelo playbook, foque em onde o negócio perde dinheiro e ataque a próxima fase.';
   }
 

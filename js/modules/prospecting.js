@@ -12,6 +12,7 @@
     id: 'prospecting', label: 'Prospecção', icon: 'i-radar', phase: 'F4',
     render(ctx) {
       const { ui, state } = ctx;
+      const tip = (k, fb) => { const m = (ctx.academy.assist.tooltips) || {}; const x = m[k] || fb; return x ? ` data-tip="${ui.esc(x)}"` : ''; };
       const g = state.goals.today, t = state.goals.targets;
       const steps = [
         { key: 'abordagens', label: 'Abordagens', ico: 'i-send' },
@@ -33,15 +34,15 @@
           <td><div class="strong">${ui.brlK(l.revenueEstBRL)}</div><div class="tag-src">${l.employees} func · ${ui.esc(l.source)}</div></td>
           <td><span class="badge ${st.cls}">${st.label}</span></td>
           <td style="text-align:right;white-space:nowrap">
-            <button class="btn btn-sm btn-primary" data-action="diagnose" data-id="${l.id}" title="Diagnóstico IA">${ui.icon('i-spark')}</button>
-            <button class="btn btn-sm btn-ghost" data-action="outreach" data-id="${l.id}" title="Abordagem">${ui.icon('i-wpp')}</button>
-            <button class="btn btn-sm btn-ghost" data-action="toPipeline" data-id="${l.id}" title="Enviar ao funil">${ui.icon('i-funnel')}</button>
+            <button class="btn btn-sm btn-primary" data-action="diagnose" data-id="${l.id}"${tip('btn-diagnose', 'Diagnóstico gratuito com IA: mostra onde esse negócio perde dinheiro.')}>${ui.icon('i-spark')}</button>
+            <button class="btn btn-sm btn-ghost" data-action="outreach" data-id="${l.id}"${tip('btn-outreach', 'Cria a mensagem de primeiro contato (abordagem) com IA.')}>${ui.icon('i-wpp')}</button>
+            <button class="btn btn-sm btn-ghost" data-action="toPipeline" data-id="${l.id}"${tip('btn-topipeline', 'Joga este lead para o Funil de vendas para você negociar.')}>${ui.icon('i-funnel')}</button>
           </td>
         </tr>`;
       }).join('');
 
       return `
-      <div class="card" style="margin-bottom:14px">
+      <div class="card" style="margin-bottom:14px"${tip('goal-track', 'Sua meta de hoje: quanto mais gente você aborda, mais clientes fecha. Comece pelas abordagens.')}>
         <div class="card-head"><div class="card-ico">${ui.icon('i-radar')}</div><div><h3>Meta diária</h3><div class="sub">Volume &gt; perfeição — caixa primeiro</div></div>
           <div class="right"><span class="badge violet">${Math.round((g.abordagens / t.abordagens) * 100)}% da meta</span></div></div>
         <div class="goal-track">${steps}</div>
@@ -49,7 +50,7 @@
 
       <div class="card">
         <div class="card-head"><div class="card-ico">${ui.icon('i-map')}</div><div><h3>Base de leads</h3><div class="sub">${state.leads.length} negócios · dados = vantagem competitiva</div></div>
-          <div class="right"><button class="btn btn-primary btn-sm" data-action="addLead">${ui.icon('i-plus')} Adicionar lead</button></div></div>
+          <div class="right"><button class="btn btn-primary btn-sm" data-action="addLead"${tip('btn-addlead', 'Cadastre um negócio que pode virar cliente (um lead) na sua base.')}>${ui.icon('i-plus')} Adicionar lead</button></div></div>
         ${state.leads.length ? `<table class="tbl"><thead><tr><th>Negócio</th><th>Problema visível</th><th>Faturamento</th><th>Status</th><th></th></tr></thead><tbody>${rows}</tbody></table>`
           : `<div class="empty">${ui.icon('i-map')}<div>${ui.esc(ctx.content.empty.leads)}</div></div>`}
       </div>`;

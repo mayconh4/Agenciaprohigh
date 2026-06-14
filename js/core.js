@@ -146,6 +146,36 @@
   if (!PROMPTS.demo) PROMPTS.demo = DEFAULT_PROMPTS.demo;
   const SEED = window.NEXUS_SEED || DEFAULT_SEED;
 
+  // ---- Central de Aprendizado (enriquecida por js/data/academy-*.js) ----
+  const DEFAULT_ACADEMY = {
+    basico: { intro: { titulo: 'Modo Básico', subtitulo: 'Entenda tudo do zero, sem enrolação', basico: 'Aprenda os conceitos do jeito mais simples possível.', pratico: 'Siga o passo a passo até o primeiro cliente pagante.' }, modulos: [], glossario: [] },
+    pratico: {
+      titulo: 'Caminho para o Primeiro Cliente', subtitulo: 'Siga as etapas e consiga seu primeiro cliente pagante.', meta: { faturamentoMetaBRL: 5000 },
+      etapas: [
+        { id: 'nicho', n: 1, titulo: 'Escolher o nicho', oque: 'Escolha um mercado específico para atuar.', porque: 'Quanto mais específico, mais fácil vender.', resultado: 'Você sabe para quem vai vender.', acoes: ['Abra Nicho & Oferta', 'Escolha 1 nicho'], dica: 'Não tente atender todo mundo.', module: 'studio', cta: 'Abrir Nicho & Oferta' },
+        { id: 'dor', n: 2, titulo: 'Entender onde o nicho perde dinheiro', oque: 'Descubra o problema que custa dinheiro ao cliente.', porque: 'Ninguém compra marketing — compram solução para uma dor financeira.', resultado: 'Você sabe a dor que vai resolver.', acoes: ['Veja "onde perde dinheiro" no nicho'], dica: 'Pergunte: onde esse nicho perde dinheiro hoje?', module: 'studio', cta: 'Ver a dor do nicho' },
+        { id: 'oferta', n: 3, titulo: 'Criar a oferta', oque: 'Monte uma oferta que promete resultado, não serviço.', porque: 'Oferta clara fecha mais e cobra mais caro.', resultado: 'Você tem uma proposta pronta.', acoes: ['Gere a oferta com IA', 'Defina o preço'], dica: 'Venda "mais pacientes", não "tráfego pago".', module: 'studio', cta: 'Criar oferta' },
+        { id: 'prospeccao', n: 4, titulo: 'Prospecção: 100 contatos/dia', oque: 'Encontre empresas com o problema que você resolve.', porque: 'Sem prospecção não há clientes.', resultado: 'Lista de leads para abordar.', acoes: ['Adicione leads', 'Bata a meta diária'], dica: 'Volume primeiro. Caixa primeiro.', module: 'prospecting', cta: 'Ir para Prospecção' },
+        { id: 'abordagem', n: 5, titulo: 'Abordagem com script', oque: 'Mande a primeira mensagem com um diagnóstico.', porque: 'Abordagem consultiva gera reuniões.', resultado: 'Conversas abertas com leads.', acoes: ['Gere diagnóstico e mensagem por IA'], dica: 'Mostre a dor antes de oferecer.', module: 'prospecting', cta: 'Gerar abordagem' },
+        { id: 'reuniao', n: 6, titulo: 'Reunião de diagnóstico', oque: 'Converse, entenda o problema e apresente a solução.', porque: 'É na reunião que o interesse vira proposta.', resultado: 'Proposta apresentada.', acoes: ['Mova o lead para Reunião no funil'], dica: 'Escute mais, fale menos.', module: 'pipeline', cta: 'Abrir o Funil' },
+        { id: 'fechamento', n: 7, titulo: 'Fechar o cliente', oque: 'Transforme interesse em contrato.', porque: 'Sem fechamento, não há faturamento.', resultado: 'Contrato assinado.', acoes: ['Mova o negócio para Fechamento/Ganho'], dica: 'Trate objeção com calma e prova.', module: 'pipeline', cta: 'Fechar negócio' },
+        { id: 'entrega', n: 8, titulo: 'Entregar resultado', oque: 'Entregue crescimento e mantenha o cliente pagando.', porque: 'Cliente satisfeito = recorrência = MRR.', resultado: 'Cliente ativo e renovando.', acoes: ['Atribua um Account Manager', 'Acompanhe a saúde'], dica: 'Mostre o retorno em R$ todo mês.', module: 'clients', cta: 'Ir para Clientes' },
+      ],
+      scripts: { abordagem: [], fechamento: [], objecoes: [], reuniao: { roteiro: [], checklist: [] } },
+    },
+    assist: { glossAnswers: [], tooltips: {}, nudges: ['Você ainda não prospectou hoje. Sem prospecção não existe faturamento.', 'Seu próximo cliente depende da ação que você ainda não tomou.'] },
+  };
+  const ACADEMY = {
+    basico: window.NEXUS_ACADEMY_BASICO || DEFAULT_ACADEMY.basico,
+    pratico: window.NEXUS_ACADEMY_PRATICO || DEFAULT_ACADEMY.pratico,
+    assist: window.NEXUS_ACADEMY_ASSIST || DEFAULT_ACADEMY.assist,
+  };
+  if (!ACADEMY.pratico.etapas || !ACADEMY.pratico.etapas.length) ACADEMY.pratico.etapas = DEFAULT_ACADEMY.pratico.etapas;
+  // mapa de glossário por sigla (p/ tooltips e consultas)
+  const GLOSS = {};
+  ((ACADEMY.basico && ACADEMY.basico.glossario) || []).forEach((g) => { if (g && g.sigla) GLOSS[g.sigla.toUpperCase()] = g; });
+  function gloss(sigla) { return GLOSS[String(sigla || '').toUpperCase()] || null; }
+
   const STORE_KEY = 'nexus.os.v1';
 
   // ----------------------------------------------------------------
@@ -218,6 +248,37 @@
     return NICHES.find((n) => n.id === state.nicheId) || NICHES[0];
   }
 
+  // Progresso "Caminho para o primeiro cliente" (orientado a faturamento)
+  function firstClientProgress(s, k) {
+    const g = (s.goals && s.goals.today) || {};
+    const t = (s.goals && s.goals.targets) || {};
+    const metaBRL = (ACADEMY.pratico.meta && ACADEMY.pratico.meta.faturamentoMetaBRL) || 5000;
+    const clientes = (s.clients || []).length;
+    const taxaResposta = g.abordagens ? (g.respostas || 0) / g.abordagens * 100 : 0;
+    return {
+      conquered: clientes > 0, metaBRL, faturamento: k.mrr, clientes,
+      abordagensHoje: g.abordagens || 0, metaAbordagens: t.abordagens || 100,
+      reunioesHoje: g.reunioes || 0, taxaResposta,
+      pct: Math.min(100, Math.round((k.mrr / metaBRL) * 100)),
+    };
+  }
+
+  // Recomenda a PRÓXIMA AÇÃO que mais aproxima do dinheiro (comportamento de mentor)
+  function recommendNextAction(s, k) {
+    const offer = s.offer || {};
+    const g = (s.goals && s.goals.today) || {}; const t = (s.goals && s.goals.targets) || {};
+    if (!offer.name || !(offer.deliverables || []).length) return { title: 'Crie sua oferta fechada', why: 'Sem oferta clara você não tem o que vender.', module: 'studio', cta: 'Criar oferta' };
+    const fechamento = (s.deals || []).filter((d) => d.stage === 'fechamento');
+    if (fechamento.length) return { title: `Feche o negócio: ${fechamento[0].name}`, why: 'Está a um passo de virar faturamento.', module: 'pipeline', cta: 'Abrir o Funil' };
+    const churn = (s.clients || []).filter((c) => c.churnRisk === 'alto');
+    if (churn.length) return { title: `Salve do churn: ${churn[0].name}`, why: 'Perder um cliente custa mais do que conquistar um novo.', module: 'clients', cta: 'Ver cliente' };
+    const reuniao = (s.deals || []).filter((d) => d.stage === 'reuniao');
+    if (reuniao.length) return { title: `Conduza a reunião: ${reuniao[0].name}`, why: 'É na reunião que o interesse vira proposta.', module: 'pipeline', cta: 'Abrir o Funil' };
+    if ((s.leads || []).length < 5) return { title: 'Adicione leads à sua base', why: 'Sem leads não há quem abordar.', module: 'prospecting', cta: 'Ir para Prospecção' };
+    if ((g.abordagens || 0) < (t.abordagens || 100)) return { title: `Faça suas abordagens de hoje (${g.abordagens || 0}/${t.abordagens || 100})`, why: 'Volume de prospecção é o que gera reuniões e clientes.', module: 'prospecting', cta: 'Prospectar agora' };
+    return { title: 'Continue prospectando e nutrindo o funil', why: 'Consistência diária é o que constrói faturamento previsível.', module: 'prospecting', cta: 'Prospecção' };
+  }
+
   // ----------------------------------------------------------------
   // UI HELPERS
   // ----------------------------------------------------------------
@@ -238,11 +299,12 @@
     return `<span class="trend ${colorCls}"><svg${flip}><use href="#i-up"/></svg>${t.pct.toFixed(0)}%</span>`;
   }
 
-  function kpiTile({ label, ico, val, sub, trend, positive = true }) {
+  function kpiTile({ label, ico, val, sub, trend, positive = true, tip }) {
+    const help = tip ? ` <span class="help" data-tip="${esc(tip)}" tabindex="0">?</span>` : '';
     return `<div class="kpi fade-in">
-      <div class="k-label">${ico ? icon(ico) : ''}${esc(label)}</div>
+      <div class="k-label">${ico ? icon(ico) : ''}${esc(label)}${help}</div>
       <div class="k-val">${val}${sub ? `<small>${sub}</small>` : ''}</div>
-      <div class="k-foot">${trend ? trendBadge(trend, positive) : ''}<span class="muted" style="font-size:11px">vs. mês anterior</span></div>
+      <div class="k-foot">${trend ? trendBadge(trend, positive) + '<span class="muted" style="font-size:11px">vs. mês anterior</span>' : ''}</div>
     </div>`;
   }
 
@@ -289,7 +351,7 @@
     .replace(/^#{1,6}\s+(.+)$/gm, '<strong>$1</strong>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/^[-*]\s+/gm, '• ');
-  const ui = { esc, brl, brlK, num, pct, initials, avClass, icon, md, kpiTile, trendBadge, spark, bar, ring, modal, closeModal, toast, modalForm };
+  const ui = { esc, brl, brlK, num, pct, initials, avClass, icon, md, gloss, kpiTile, trendBadge, spark, bar, ring, modal, closeModal, toast, modalForm };
   function modalForm(values) {
     // lê inputs/selects/textarea do modal por name -> objeto
     const out = {};
@@ -305,23 +367,27 @@
   function registerModule(m) { modules[m.id] = m; }
 
   function ctx() {
+    const kpis = computeKpis(state);
     return {
-      state, store, ui, ai: NEXUS.ai, content: CONTENT, niches: NICHES, prompts: PROMPTS,
-      kpis: computeKpis(state), niche: currentNiche(), offer: state.offer,
+      state, store, ui, ai: NEXUS.ai, content: CONTENT, niches: NICHES, prompts: PROMPTS, academy: ACADEMY,
+      kpis, niche: currentNiche(), offer: state.offer,
+      firstClient: firstClientProgress(state, kpis), nextAction: recommendNextAction(state, kpis),
       go: setActive, refresh: render,
     };
   }
 
   function buildNav() {
-    const order = ['dashboard', 'studio', 'prospecting', 'pipeline', 'clients', 'team', 'playbook'];
+    const order = ['dashboard', 'studio', 'prospecting', 'pipeline', 'clients', 'team', 'academy', 'playbook'];
     const nav = document.getElementById('nav');
+    const tips = (ACADEMY.assist && ACADEMY.assist.tooltips) || {};
     let html = '<div class="nav-sep">Operação</div>';
-    order.forEach((id, i) => {
+    order.forEach((id) => {
       const m = modules[id];
       if (!m) return;
-      if (id === 'playbook') html += '<div class="nav-sep">Estratégia</div>';
+      if (id === 'academy') html += '<div class="nav-sep">Aprender & Estratégia</div>';
       const meta = (CONTENT.modules && CONTENT.modules[id]) || {};
-      html += `<button class="nav-item ${id === activeId ? 'active' : ''}" data-nav="${id}">
+      const tip = tips['nav-' + id] ? ` data-tip="${esc(tips['nav-' + id])}"` : '';
+      html += `<button class="nav-item ${id === activeId ? 'active' : ''}" data-nav="${id}"${tip}>
         ${icon(m.icon)}<span>${esc(meta.title || m.label)}</span>${m.phase ? `<span class="ni-phase">${m.phase}</span>` : ''}
       </button>`;
     });
@@ -417,6 +483,70 @@
   };
 
   // ----------------------------------------------------------------
+  // TOOLTIPS (ajuda contextual em todo o app)
+  // ----------------------------------------------------------------
+  function initTooltips() {
+    const tip = document.getElementById('tip');
+    if (!tip) return;
+    let hideT;
+    const show = (el) => {
+      const txt = el.getAttribute('data-tip'); if (!txt) return;
+      tip.textContent = txt; tip.classList.add('show');
+      const r = el.getBoundingClientRect(), tr = tip.getBoundingClientRect();
+      let left = r.left + r.width / 2 - tr.width / 2;
+      let top = r.top - tr.height - 10;
+      if (top < 8) top = r.bottom + 10;
+      left = Math.max(8, Math.min(left, window.innerWidth - tr.width - 8));
+      tip.style.left = left + 'px'; tip.style.top = top + 'px';
+    };
+    const hide = () => tip.classList.remove('show');
+    document.addEventListener('mouseover', (e) => { const el = e.target.closest('[data-tip]'); if (el) { clearTimeout(hideT); show(el); } });
+    document.addEventListener('mouseout', (e) => { if (e.target.closest('[data-tip]')) hideT = setTimeout(hide, 80); });
+    document.addEventListener('focusin', (e) => { const el = e.target.closest('[data-tip]'); if (el) show(el); });
+    document.addEventListener('focusout', hide);
+    // No celular (sem hover): tocar no "?" abre a explicação em modal
+    document.addEventListener('click', (e) => {
+      const h = e.target.closest('.help[data-tip]');
+      if (h) { e.stopPropagation(); modal(`<div class="modal-head"><div><h2>O que significa</h2></div><button class="icon-btn" data-action="closeModal">${icon('i-x')}</button></div><p style="font-size:14px;line-height:1.65">${esc(h.getAttribute('data-tip'))}</p><button class="btn btn-primary" style="margin-top:14px" data-action="closeModal">${icon('i-check')} Entendi</button>`); }
+    });
+  }
+
+  // ----------------------------------------------------------------
+  // ONBOARDING
+  // ----------------------------------------------------------------
+  function showOnboarding() {
+    modal(`<div class="onb">
+      <div class="onb-badge">${icon('i-spark')}</div>
+      <h2>Bem-vindo ao NEXUS</h2>
+      <p>Este app te ajuda a <b>conseguir clientes pagantes</b>: você escolhe um nicho, cria uma oferta e prospecta — com a IA te guiando em cada passo. Funciona mesmo que você <b>nunca</b> tenha trabalhado com marketing ou vendas.</p>
+      <p class="muted" style="font-size:13px;margin-top:4px">Como você quer começar?</p>
+      <div class="onb-opts">
+        <button class="onb-card" data-action="onbStart" data-mode="pratico">
+          <div class="oc-ic">${icon('i-target')}</div>
+          <strong>Quero clientes agora</strong>
+          <span>Modo Prático: o passo a passo até o 1º cliente pagante.</span>
+        </button>
+        <button class="onb-card" data-action="onbStart" data-mode="basico">
+          <div class="oc-ic">${icon('i-doc')}</div>
+          <strong>Sou iniciante total</strong>
+          <span>Modo Básico: entenda os conceitos do zero, sem termos difíceis.</span>
+        </button>
+      </div>
+      <button class="btn btn-ghost btn-sm" data-action="onbSkip" style="width:100%;justify-content:center">Pular e explorar sozinho</button>
+    </div>`);
+  }
+  globalActions.onbStart = function (c, el) {
+    const mode = el.dataset.mode;
+    store.update((s) => { s.learn = s.learn || {}; s.learn.onboardingDone = true; s.learn.mode = mode; });
+    closeModal(); setActive('academy');
+  };
+  globalActions.onbSkip = function () {
+    store.update((s) => { s.learn = s.learn || {}; s.learn.onboardingDone = true; });
+    closeModal(); ui.toast('Você pode rever o tour a qualquer momento em Aprender');
+  };
+  globalActions.showTour = function () { showOnboarding(); };
+
+  // ----------------------------------------------------------------
   // BOOT
   // ----------------------------------------------------------------
   function boot() {
@@ -426,8 +556,12 @@
     if (!state.goals) state.goals = SEED.goals;
     if (!state.offer) state.offer = SEED.offer;
     if (!state.nicheId) state.nicheId = SEED.nicheId || (NICHES[0] && NICHES[0].id);
+    if (!state.learn) state.learn = { conceptsRead: [], stepsDone: [], onboardingDone: false, mode: 'pratico' };
+    if (!Array.isArray(state.learn.conceptsRead)) state.learn.conceptsRead = [];
+    if (!Array.isArray(state.learn.stepsDone)) state.learn.stepsDone = [];
 
     buildNav();
+    initTooltips();
     document.addEventListener('click', onClick);
     document.getElementById('overlay').addEventListener('click', (e) => { if (e.target.id === 'overlay') closeModal(); });
     document.getElementById('hamburger').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
@@ -436,12 +570,13 @@
     if (NEXUS.ai && NEXUS.ai.init) NEXUS.ai.init();
     if (NEXUS.copilot && NEXUS.copilot.init) NEXUS.copilot.init();
     setActive('dashboard');
+    if (!state.learn.onboardingDone) setTimeout(showOnboarding, 400);
   }
 
   // ----------------------------------------------------------------
   window.NEXUS = {
     boot, registerModule, store, ui, computeKpis, currentNiche,
-    content: CONTENT, niches: NICHES, prompts: PROMPTS,
+    content: CONTENT, niches: NICHES, prompts: PROMPTS, academy: ACADEMY, gloss,
     get ctx() { return ctx(); },
     setActive,
     ai: { live: false, generate: async () => '', init() {} }, // substituído por ai.js
