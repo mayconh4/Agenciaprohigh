@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800;900&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=2" />
+<link rel="stylesheet" href="css/styles.css?v=3" />
 </head>
 <body>
 
@@ -19,8 +19,8 @@
   <div class="grid-veil"></div>
 </div>
 
-<!-- ============ SVG ICON SPRITE ============ -->
-<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<!-- ============ SVG ICON SPRITE (oculto — não deve capturar cliques) ============ -->
+<svg aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden;pointer-events:none">
   <defs>
     <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 2l2.2 5.8L20 10l-5.8 2.2L12 18l-2.2-5.8L4 10l5.8-2.2z"/></symbol>
     <symbol id="i-grid" viewBox="0 0 24 24"><path d="M3 3h8v8H3zm10 0h8v8h-8zM3 13h8v8H3zm10 0h8v8h-8z"/></symbol>
@@ -116,28 +116,28 @@
 <div class="tip" id="tip" role="tooltip"></div>
 
 <!-- Dados gerados (enriquecidos pelo workflow; o core tem defaults embutidos) -->
-<script src="js/data/content.js?v=2"></script>
-<script src="js/data/niches.js?v=2"></script>
-<script src="js/data/prompts.js?v=2"></script>
-<script src="js/data/seed.js?v=2"></script>
-<script src="js/data/academy-basico.js?v=2"></script>
-<script src="js/data/academy-pratico.js?v=2"></script>
-<script src="js/data/academy-assist.js?v=2"></script>
+<script src="js/data/content.js?v=3"></script>
+<script src="js/data/niches.js?v=3"></script>
+<script src="js/data/prompts.js?v=3"></script>
+<script src="js/data/seed.js?v=3"></script>
+<script src="js/data/academy-basico.js?v=3"></script>
+<script src="js/data/academy-pratico.js?v=3"></script>
+<script src="js/data/academy-assist.js?v=3"></script>
 
 <!-- Núcleo + IA -->
-<script src="js/core.js?v=2"></script>
-<script src="js/ai.js?v=2"></script>
+<script src="js/core.js?v=3"></script>
+<script src="js/ai.js?v=3"></script>
 
 <!-- Módulos -->
-<script src="js/modules/dashboard.js?v=2"></script>
-<script src="js/modules/studio.js?v=2"></script>
-<script src="js/modules/prospecting.js?v=2"></script>
-<script src="js/modules/pipeline.js?v=2"></script>
-<script src="js/modules/clients.js?v=2"></script>
-<script src="js/modules/team.js?v=2"></script>
-<script src="js/modules/academy.js?v=2"></script>
-<script src="js/modules/playbook.js?v=2"></script>
-<script src="js/modules/copilot.js?v=2"></script>
+<script src="js/modules/dashboard.js?v=3"></script>
+<script src="js/modules/studio.js?v=3"></script>
+<script src="js/modules/prospecting.js?v=3"></script>
+<script src="js/modules/pipeline.js?v=3"></script>
+<script src="js/modules/clients.js?v=3"></script>
+<script src="js/modules/team.js?v=3"></script>
+<script src="js/modules/academy.js?v=3"></script>
+<script src="js/modules/playbook.js?v=3"></script>
+<script src="js/modules/copilot.js?v=3"></script>
 
 <script>NEXUS.boot();</script>
 </body>

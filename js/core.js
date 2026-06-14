@@ -400,7 +400,8 @@
     document.getElementById('pageTitle').textContent = meta.title || (modules[activeId] && modules[activeId].label) || '';
     document.getElementById('pageSub').textContent = meta.subtitle || '';
     document.getElementById('brandName').childNodes[0].nodeValue = (CONTENT.brand && CONTENT.brand.name) || 'NEXUS';
-    document.getElementById('brandTag').textContent = (CONTENT.brand && CONTENT.brand.subtitle) || 'Agency OS';
+    const sub = (CONTENT.brand && CONTENT.brand.subtitle) || '';
+    document.getElementById('brandTag').textContent = (sub && sub.length <= 16) ? sub : 'Agency OS';
     document.getElementById('agencyChipText').textContent = state.agency.niche || 'Agência';
     // ai pill
     const pill = document.getElementById('aiPill');
