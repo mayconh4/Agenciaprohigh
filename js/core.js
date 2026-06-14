@@ -359,16 +359,34 @@
     try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (_) {}
     _ttsReset(_ttsBtn); _ttsBtn = null;
   }
-  function speak(text, btn) {
+  function ttsVoices() {
+    const v = (window.speechSynthesis && window.speechSynthesis.getVoices && window.speechSynthesis.getVoices()) || [];
+    // pt-BR primeiro, vozes neurais (Natural/Online do Edge) no topo
+    return v.slice().sort((a, b) => {
+      const score = (x) => (/^pt/i.test(x.lang) ? 0 : 10) + (/natural|online/i.test(x.name) ? -2 : 0) + (/google/i.test(x.name) ? -1 : 0);
+      return score(a) - score(b);
+    });
+  }
+  function pickVoice(voiceURI) {
+    const voices = (window.speechSynthesis.getVoices() || []);
+    if (voiceURI) { const v = voices.find((x) => x.voiceURI === voiceURI); if (v) return v; }
+    const pt = voices.filter((x) => /^pt/i.test(x.lang));
+    const pool = pt.length ? pt : voices;
+    // ranking de qualidade: Edge neural (Natural/Online) > Google > pt-BR > qualquer
+    return pool.find((x) => /natural|online/i.test(x.name)) || pool.find((x) => /google/i.test(x.name)) || pool.find((x) => /pt[-_]?br/i.test(x.lang)) || pool[0];
+  }
+  function speak(text, btn, opts) {
+    opts = opts || {};
     if (!('speechSynthesis' in window)) { toast('Seu navegador não suporta leitura em voz', 'i-x'); return; }
     const synth = window.speechSynthesis;
     const wasThis = (_ttsBtn === btn) && synth.speaking;
     stopSpeak();
     if (wasThis || !text) return; // clicar de novo no mesmo = parar
+    const cfg = (state && state.learn && state.learn.tts) || {};
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = 'pt-BR'; u.rate = 1; u.pitch = 1;
-    const voices = synth.getVoices() || [];
-    const v = voices.find((x) => /pt[-_]?BR/i.test(x.lang)) || voices.find((x) => /^pt/i.test(x.lang));
+    u.lang = 'pt-BR'; u.pitch = 1;
+    u.rate = opts.rate || cfg.rate || 1;
+    const v = pickVoice(opts.voiceURI != null ? opts.voiceURI : cfg.voiceURI);
     if (v) u.voice = v;
     _ttsBtn = btn;
     if (btn) { btn.classList.add('playing'); const lbl = btn.querySelector('.tts-lbl'); if (lbl) lbl.textContent = 'Parar'; const us = btn.querySelector('use'); if (us) us.setAttribute('href', '#i-stop'); }
@@ -591,9 +609,12 @@
     if (!state.learn) state.learn = { conceptsRead: [], stepsDone: [], onboardingDone: false, mode: 'pratico' };
     if (!Array.isArray(state.learn.conceptsRead)) state.learn.conceptsRead = [];
     if (!Array.isArray(state.learn.stepsDone)) state.learn.stepsDone = [];
+    if (!state.learn.tts) state.learn.tts = { voiceURI: '', rate: 1 };
 
     buildNav();
     initTooltips();
+    // pré-carrega a lista de vozes (carrega de forma assíncrona em alguns navegadores)
+    try { if (window.speechSynthesis) { window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged = function () {}; } } catch (_) {}
     document.addEventListener('click', onClick);
     document.getElementById('overlay').addEventListener('click', (e) => { if (e.target.id === 'overlay') closeModal(); });
     document.getElementById('hamburger').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
@@ -608,7 +629,7 @@
   // ----------------------------------------------------------------
   window.NEXUS = {
     boot, registerModule, store, ui, computeKpis, currentNiche,
-    content: CONTENT, niches: NICHES, prompts: PROMPTS, academy: ACADEMY, gloss, speak, stopSpeak,
+    content: CONTENT, niches: NICHES, prompts: PROMPTS, academy: ACADEMY, gloss, speak, stopSpeak, ttsVoices,
     get ctx() { return ctx(); },
     setActive,
     ai: { live: false, generate: async () => '', init() {} }, // substituído por ai.js

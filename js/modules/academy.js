@@ -165,6 +165,7 @@
       return `<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px">
           ${tabs(tab)}
           <button class="btn btn-ghost btn-sm" data-action="askAssistant" style="margin-left:auto">${ctx.ui.icon('i-bot')} Perguntar ao assistente</button>
+          <button class="btn btn-ghost btn-sm" data-action="voiceSettings" data-tip="Escolher a voz e a velocidade da leitura ('Ouvir')">${ctx.ui.icon('i-sound')} Voz</button>
           <button class="btn btn-ghost btn-sm" data-action="showTour">Rever apresentação</button>
         </div>
         <div class="fade-in">${body}</div>`;
@@ -210,6 +211,33 @@
           if (s) text = join([s.titulo + '.', s.oque, 'Por que:', s.porque, 'Resultado esperado:', s.resultado, s.dica ? ('Dica: ' + s.dica) : '']);
         }
         NEXUS.speak(text, el);
+      },
+      voiceSettings(ctx) {
+        const ui = ctx.ui;
+        const voices = NEXUS.ttsVoices();
+        const cfg = ctx.state.learn.tts || { voiceURI: '', rate: 1 };
+        const hasEdge = voices.some((v) => /natural|online/i.test(v.name));
+        const opts = '<option value="">Melhor voz automática (recomendado)</option>' +
+          voices.map((v) => `<option value="${ui.esc(v.voiceURI)}"${v.voiceURI === cfg.voiceURI ? ' selected' : ''}>${ui.esc(v.name + ' — ' + v.lang)}${/natural|online/i.test(v.name) ? ' ⭐' : ''}</option>`).join('');
+        const speeds = [['0.85', 'Lenta'], ['1', 'Normal'], ['1.15', 'Rápida'], ['1.3', 'Mais rápida']]
+          .map((s) => `<option value="${s[0]}"${String(cfg.rate) === s[0] ? ' selected' : ''}>${s[1]}</option>`).join('');
+        ui.modal(`<div class="modal-head"><div><h2>Voz da leitura</h2><p>Escolha a voz e a velocidade do botão "Ouvir"</p></div><button class="icon-btn" data-action="closeModal">${ui.icon('i-x')}</button></div>
+          ${!voices.length ? '<p class="muted" style="font-size:13px;margin-bottom:12px">Carregando as vozes do aparelho… se a lista estiver vazia, feche e abra esta janela de novo.</p>' : ''}
+          ${hasEdge
+            ? `<div class="alert good" style="margin-bottom:12px"><div class="a-ic">${ui.icon('i-spark')}</div><div class="a-tx">Vozes neurais da Microsoft (Edge) detectadas — marcadas com ⭐. São as mais naturais e gratuitas.</div></div>`
+            : `<div class="muted" style="font-size:12px;margin-bottom:12px;line-height:1.5">💡 Dica: abra o app no <b>Microsoft Edge</b> para ganhar vozes neurais ⭐ (Edge free) — bem mais naturais, de graça.</div>`}
+          <div class="field"><label>Voz</label><select class="input" name="voice">${opts}</select></div>
+          <div class="field"><label>Velocidade</label><select class="input" name="rate">${speeds}</select></div>
+          <div style="display:flex;gap:8px"><button class="btn btn-ghost" data-action="testVoice">${ui.icon('i-sound')} Testar</button><button class="btn btn-primary" data-action="saveVoice">${ui.icon('i-check')} Salvar</button></div>`);
+      },
+      testVoice(ctx) {
+        const v = ctx.ui.modalForm();
+        NEXUS.speak('Olá! Esta é a voz que vai ler as explicações do app para você.', null, { voiceURI: v.voice, rate: Number(v.rate) || 1 });
+      },
+      saveVoice(ctx) {
+        const v = ctx.ui.modalForm();
+        ctx.store.update((s) => { s.learn.tts = { voiceURI: v.voice || '', rate: Number(v.rate) || 1 }; });
+        ctx.ui.closeModal(); ctx.ui.toast('Voz salva');
       },
       askAssistant() { NEXUS.copilot.toggle(); },
     },
