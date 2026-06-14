@@ -1,0 +1,19 @@
+# Dependências
+node_modules/
+
+# Ambiente / segredos
+.env
+*.local
+
+# Arquivos gerados / temporários
+.gen/
+.DS_Store
+Thumbs.db
+
+# Editores
+.vscode/
+.idea/
+*.swp
+
+# Config local do Claude Code
+.claude/

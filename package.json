@@ -1,0 +1,14 @@
+{
+  "name": "nexus-agency-os",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NEXUS — Agency OS: sistema operacional para construir e gerir uma agência vertical de IA (playbook de 12 fases).",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
