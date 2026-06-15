@@ -519,6 +519,7 @@
       <div style="display:flex;gap:10px;margin-top:8px">
         <button class="btn btn-primary" data-action="saveSettings">${icon('i-check')} Salvar</button>
         <button class="btn btn-ghost" data-action="resetData">Restaurar demo</button>
+        <button class="btn btn-ghost" data-action="logout" style="margin-left:auto">Sair</button>
       </div>`);
   }
   globalActions.saveSettings = function () {
@@ -597,8 +598,51 @@
   globalActions.showTour = function () { showOnboarding(); };
 
   // ----------------------------------------------------------------
+  // LOGIN (cadeado simples — client-side; ver aviso de segurança)
+  // ----------------------------------------------------------------
+  const AUTH_USER = 'M@yk0n';
+  const AUTH_HASH = '35b302b87905e3521d646a9594a062243bfa876aa8f696d0caf33ac060ffec78'; // sha256("nexus-os:" + senha)
+  const AUTH_KEY = 'nexus.auth.v1';
+  function isAuthed() { try { return localStorage.getItem(AUTH_KEY) === '1'; } catch (_) { return false; } }
+  async function sha256Hex(s) {
+    if (!(window.crypto && window.crypto.subtle)) return null;
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+    return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
+  function initAuth() {
+    const form = document.getElementById('authForm');
+    if (!form) return;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const u = (document.getElementById('authUser').value || '').trim();
+      const p = document.getElementById('authPass').value || '';
+      const err = document.getElementById('authErr');
+      const hash = await sha256Hex('nexus-os:' + p);
+      if (hash === null) { err.textContent = 'Login seguro indisponível neste navegador (use HTTPS).'; return; }
+      if (u === AUTH_USER && hash === AUTH_HASH) {
+        try { localStorage.setItem(AUTH_KEY, '1'); } catch (_) {}
+        err.textContent = '';
+        document.getElementById('authPass').value = '';
+        document.documentElement.className = 'authed';
+        enterApp();
+      } else {
+        err.textContent = 'Usuário ou senha incorretos.';
+        const pf = document.getElementById('authPass'); if (pf) pf.select();
+      }
+    });
+  }
+  globalActions.logout = function () {
+    try { localStorage.removeItem(AUTH_KEY); } catch (_) {}
+    location.reload();
+  };
+
+  // ----------------------------------------------------------------
   // BOOT
   // ----------------------------------------------------------------
+  function enterApp() {
+    setActive('dashboard');
+    if (!state.learn.onboardingDone) setTimeout(showOnboarding, 400);
+  }
   function boot() {
     state = loadState();
     // migração leve: garante chaves
@@ -622,8 +666,9 @@
 
     if (NEXUS.ai && NEXUS.ai.init) NEXUS.ai.init();
     if (NEXUS.copilot && NEXUS.copilot.init) NEXUS.copilot.init();
-    setActive('dashboard');
-    if (!state.learn.onboardingDone) setTimeout(showOnboarding, 400);
+    initAuth();
+    if (isAuthed()) { document.documentElement.className = 'authed'; enterApp(); }
+    else { document.documentElement.className = 'locked'; const u = document.getElementById('authUser'); if (u) setTimeout(() => u.focus(), 80); }
   }
 
   // ----------------------------------------------------------------

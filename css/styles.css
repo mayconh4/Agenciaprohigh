@@ -498,6 +498,20 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .sc-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
 .script-card p{font-size:12.5px;line-height:1.55;color:var(--txt-2);white-space:pre-wrap}
 
+/* ===== Login (cadeado) ===== */
+#authgate{display:none;position:fixed;inset:0;z-index:200;place-items:center;padding:24px;
+  background:radial-gradient(120% 120% at 50% -10%,#1c1440 0%,var(--bg-1) 52%,var(--bg-0) 100%)}
+html.locked #authgate{display:grid}
+html.locked .shell,html.locked .copilot-fab,html.locked .topbar{display:none}
+html.authed #authgate{display:none}
+.auth-card{width:min(380px,100%);border-radius:var(--r-lg);padding:34px 28px;text-align:center;animation:fadeIn .4s var(--ease)}
+.auth-logo{width:56px;height:56px;border-radius:17px;margin:0 auto 16px;display:grid;place-items:center;background:var(--grad-brand);color:#1a0f2e;box-shadow:0 14px 32px -10px rgba(167,139,250,.8),inset 0 1px 0 rgba(255,255,255,.5)}
+.auth-logo svg{width:28px;height:28px}
+.auth-card h1{font-family:'Outfit',sans-serif;font-weight:800;font-size:27px;letter-spacing:.05em}
+.auth-sub{color:var(--txt-3);font-size:13px;margin:7px 0 22px}
+.auth-card .field{text-align:left}
+.auth-err{color:var(--red);font-size:12.5px;min-height:18px;margin:2px 0 10px;text-align:left;font-weight:600}
+
 /* Botão "Ouvir" (leitura em voz / TTS) */
 .tts svg{width:15px;height:15px}
 .tts.playing{background:var(--grad-cyan);color:#0a1530;border-color:transparent;animation:ttsPulse 1.4s ease-in-out infinite}
